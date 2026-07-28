@@ -1,3 +1,6 @@
 dataset/
 .venv/
 devnotes/
+split_dataset_train/
+split_dataset_test/
+__pycache__/
