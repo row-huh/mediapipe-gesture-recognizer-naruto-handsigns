@@ -1,6 +1,10 @@
 dataset/
 .venv/
 devnotes/
+split_dataset/
 split_dataset_train/
 split_dataset_test/
 __pycache__/
+features.npz
+hand_landmarker.task
+model.pt
