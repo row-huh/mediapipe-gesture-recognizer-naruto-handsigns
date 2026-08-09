@@ -11,7 +11,7 @@ from mediapipe.tasks.python import vision
 
 MODEL_URL = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
 LANDMARKER_MODEL_PATH = "hand_landmarker.task"
-PYTORCH_MODEL_PATH = "model.pt"
+PYTORCH_MODEL_PATH = "iter2.pt"
 MAX_HANDS = 2
 NONE_THRESHOLD = 0.9  # only show a gesture name when very confident; tune against your val set
 

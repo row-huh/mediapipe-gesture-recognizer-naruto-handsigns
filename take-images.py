@@ -3,9 +3,9 @@ import os
 import time
 
 # Configuration
-NUM_IMAGES = 100
+NUM_IMAGES = 200
 INTERVAL = 2  # seconds
-OUTPUT_FOLDER = "captured_images"
+OUTPUT_FOLDER = "tiger"
 
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
