@@ -11,7 +11,7 @@ from mediapipe.tasks.python import vision
 
 MODEL_URL = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
 LANDMARKER_MODEL_PATH = "hand_landmarker.task"
-PYTORCH_MODEL_PATH = "iter2.pt"
+PYTORCH_MODEL_PATH = "model.pt"
 MAX_HANDS = 2
 NONE_THRESHOLD = 0.9  # only show a gesture name when very confident; tune against your val set
 
@@ -79,9 +79,22 @@ def landmarks_to_vec(result):
     else:
         inter = np.zeros(4, dtype=np.float32)
 
-    return np.concatenate([slots["Left"], slots["Right"], inter])  # 130-d
+    return np.concatenate([slots["Left"], slots["Right"]])  # 130-d
 
-# --- 4. OPENCV DRAWING UTILITY ---
+# --- 4. FULLSCREEN LETTERBOX HELPER (avoids stretching to screen aspect ratio) ---
+def letterbox(frame, target_w, target_h):
+    h, w = frame.shape[:2]
+    scale = min(target_w / w, target_h / h)
+    new_w, new_h = int(w * scale), int(h * scale)
+    resized = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+    canvas = np.zeros((target_h, target_w, 3), dtype=np.uint8)
+    x_off = (target_w - new_w) // 2
+    y_off = (target_h - new_h) // 2
+    canvas[y_off:y_off + new_h, x_off:x_off + new_w] = resized
+    return canvas
+
+# --- 5. OPENCV DRAWING UTILITY ---
 def draw_skeleton(frame, hand_landmarks):
     h, w, _ = frame.shape
     connections = [
@@ -116,6 +129,15 @@ def main():
     cap = cv2.VideoCapture(0)
     print("Live Feed Active. Press 'q' to exit the application loop.")
 
+    WINDOW_NAME = "Real-Time Gesture Classifier Pipeline"
+    cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
+    cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
+    # Grab the actual fullscreen window size to letterbox against
+    _, _, SCREEN_W, SCREEN_H = cv2.getWindowImageRect(WINDOW_NAME)
+    if SCREEN_W <= 0 or SCREEN_H <= 0:
+        SCREEN_W, SCREEN_H = 1920, 1080  # fallback if the query fails
+
     while cap.isOpened():
         success, frame = cap.read()
         if not success:
@@ -148,7 +170,8 @@ def main():
                 cv2.putText(frame, display_text, (20, 50),
                             cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
 
-        cv2.imshow("Real-Time Gesture Classifier Pipeline", frame)
+        display_frame = letterbox(frame, SCREEN_W, SCREEN_H)
+        cv2.imshow(WINDOW_NAME, display_frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
