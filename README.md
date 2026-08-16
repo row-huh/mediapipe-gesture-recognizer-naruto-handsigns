@@ -1,20 +1,28 @@
 # naruto-hand-signs
 
-Recognizes Naruto hand signs from a live webcam feed. Nothing fancy, just MediaPipe doing the hand tracking and a small MLP doing the classification on top.
+This recognizes Naruto hand signs from a live webcam feed. MediaPipe handles the hand tracking, and a small MLP does the actual classification on top of that.
 
 ![demo](readme-assets/demo.gif)
 
-The idea is pretty simple: MediaPipe's HandLandmarker pulls out 21 hand landmarks per hand, those get normalized (wrist-relative, scale-normalized) and concatenated by handedness (left/right), and that vector gets fed into a small PyTorch MLP (128 → 64 → num_classes, with dropout) that spits out a sign class. All the landmark extraction happens once and gets cached into a `features.npz` so training doesn't have to redo it every run.
+MediaPipe's HandLandmarker pulls 21 landmarks out of each detected hand. Those get normalized relative to the wrist and scale, then concatenated by handedness so a two-handed sign and a one-handed sign end up as consistent-length vectors. That vector is what gets passed into the model.
 
-![hand signs](readme-assets/image.png)
+![pipeline](readme-assets/architecture.png)
 
-Dataset-wise, images where MediaPipe can't detect any hands get dropped since there's nothing to extract, which throws away a decent chunk of the raw images. Worth keeping in mind if you're building on top of this or extending the dataset.
+The model is a small MLP: input_dim to 128 to 64 to num_classes, with ReLU and dropout after the first two layers. Nothing exotic, it just needed to separate the sign classes well enough on landmark data, and this was enough.
 
-If you want the full walkthrough with the reasoning, plots, and failure cases, I wrote it up here: https://medium.com/@roha-pathan125/naruto-hand-signs-recognition-using-cnns-yolo-mediapipe-mlp-a71d6b3ab4b4?sharedUserId=roha-pathan125
+![mlp](readme-assets/neural-net.png)
+
+Landmark extraction only happens once and gets cached to `features.npz`, so training doesn't have to recompute it on every run.
+
+![hand signs](readme-assets/handsigns.png)
+
+One thing to be aware of with the dataset: images where MediaPipe can't detect a hand at all get dropped, since there's no landmark to extract. That removes a meaningful chunk of the raw images, so it's worth knowing if you're extending the dataset yourself.
+
+I wrote up the full process in more detail here, including the reasoning behind some of these choices and where it still falls short: https://medium.com/@roha-pathan125/naruto-hand-signs-recognition-using-cnns-yolo-mediapipe-mlp-a71d6b3ab4b4?sharedUserId=roha-pathan125
 
 ### what's in here
 
 - `live.py` — runs inference in real time off your webcam
-- `train.ipynb` — the actual training pipeline, extraction → training → eval, all in one place
+- `train.ipynb` — the training pipeline, extraction through training through evaluation
 - `take-images.py` — helper script to build your own dataset from scratch
 - `model.pt` — the trained model
